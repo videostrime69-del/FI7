@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FI7 SHORTENER</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{background:#0a0a0a;color:#fff;font-family:system-ui}
+.mono{font-family:monospace}
+.glass{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);backdrop-filter:blur(12px)}
+</style>
+</head>
+<body class="min-h-screen p-5">
+<div class="max-w-xl mx-auto">
+<div class="text-center py-8">
+<h1 class="text-4xl font-black tracking-tight">FI7 SHORTENER</h1>
+<p class="mono text-white/40 text-sm mt-2">videostrime69-del.github.io/FI7/</p>
+<p class="text-white/20 text-xs mt-1">Database: GitHub database.json</p>
+</div>
+
+<div class="glass rounded-[24px] p-7">
+<h2 class="font-bold mb-5">Create Short Link</h2>
+<input id="longUrl" type="url" placeholder="https://your-long-link.com/..." class="w-full bg-black/50 border border-white/10 rounded-xl px-5 py-4 outline-none focus:border-white/20 mb-3">
+<button onclick="generate()" class="w-full bg-white text-black font-black rounded-xl py-4 active:scale-[0.98] transition">GENERATE SHORT LINK</button>
+
+<div id="result" class="hidden mt-8">
+<div class="h-px bg-white/10 mb-6"></div>
+<p class="text-[11px] tracking-widest text-white/30 mb-2">YOUR SHORT LINK IS READY</p>
+<div id="shortLink" class="mono bg-white text-black rounded-xl p-4 font-bold text-center break-all"></div>
+
+<p class="text-[11px] tracking-widest text-white/30 mt-6 mb-2">STEP 2: ADD THIS TO database.json</p>
+<pre id="jsonCode" class="mono bg-black border border-white/10 rounded-xl p-4 text-[13px] overflow-auto"></pre>
+
+<div class="mt-4 p-4 bg-white/5 rounded-xl text-[12px] leading-5 text-white/60">
+<b class="text-white">Su karvu:</b><br>
+1. GitHub ma <b>database.json</b> file open karo<br>
+2. Edit dabavo<br>
+3. Andar je chhe ema last ma <b>,</b> muki ne upar nu JSON paste karo<br>
+4. Commit karo. 1 min ma link chalu thai jase.
+</div>
+
+<button onclick="copyJson()" class="mt-4 w-full bg-white/10 border border-white/10 rounded-xl py-3 text-sm font-bold">Copy JSON</button>
+<button onclick="copyLink()" class="mt-2 w-full bg-white text-black rounded-xl py-3 text-sm font-bold">Copy Short Link</button>
+</div>
+</div>
+
+<div id="redirectBox" class="hidden glass rounded-[24px] p-8 text-center mt-6">
+<div class="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+<h3 class="font-bold">Redirecting...</h3>
+<p id="redirectTo" class="mono text-xs text-white/40 mt-2 break-all"></p>
+<p id="debug" class="mono text-[10px] text-white/20 mt-4"></p>
+</div>
+
+<div class="mt-10 text-center">
+<p class="text-[11px] text-white/20">All Links:</p>
+<div id="allLinks" class="mono text-[11px] text-white/40 mt-2 space-y-1"></div>
+</div>
+
+</div>
+
+<script>
+const USERNAME = "videostrime69-del";
+const REPO = "FI7";
+const BASE_URL = `https://${USERNAME}.github.io/${REPO}/`;
+
+function genCode(){
+  const c='abcdefghijklmnopqrstuvwxyz0123456789';
+  let s='';
+  for(let i=0;i<3;i++) s+=c[Math.floor(Math.random()*c.length)];
+  return s;
+}
+
+function generate(){
+  const longUrl = document.getElementById('longUrl').value.trim();
+  if(!longUrl.startsWith('http')){
+    alert('Valid https:// URL nakho');
+    return;
+  }
+  const code = genCode();
+  const shortLink = BASE_URL + code;
+  document.getElementById('shortLink').textContent = shortLink;
+  document.getElementById('jsonCode').textContent = `"${code}": "${longUrl}"`;
+  document.getElementById('result').classList.remove('hidden');
+  window.lastShort = shortLink;
+  window.lastJson = `"${code}": "${longUrl}"`;
+  window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+}
+
+function copyLink(){
+  navigator.clipboard.writeText(document.getElementById('shortLink').textContent);
+  alert('Short link copied!');
+}
+function copyJson(){
+  navigator.clipboard.writeText(document.getElementById('jsonCode').textContent);
+  alert('JSON copied! Have database.json ma paste karo');
+}
+
+// Redirect logic - reads from database.json (same repo)
+async function loadDB(){
+  try{
+    const res = await fetch('./database.json?v=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) throw new Error('database.json not found');
+    const db = await res.json();
+    return db;
+  }catch(e){
+    console.error(e);
+    return null;
+  }
+}
+
+async function handleRedirect(){
+  const code = sessionStorage.getItem('shortcode');
+  if(!code) {
+    // show all links
+    const db = await loadDB();
+    if(db){
+      const container = document.getElementById('allLinks');
+      container.innerHTML = Object.entries(db).map(([k,v])=>`<div><a href="${BASE_URL}${k}" class="text-white/60 hover:text-white underline">${k}</a> → ${v.slice(0,40)}...</div>`).join('');
+    }
+    return;
+  }
+  sessionStorage.removeItem('shortcode');
+  const cleanCode = code.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!cleanCode || cleanCode === REPO.toLowerCase()) return;
+
+  const box = document.getElementById('redirectBox');
+  box.classList.remove('hidden');
+  document.getElementById('redirectTo').textContent = `Searching for code: ${cleanCode}`;
+
+  const db = await loadDB();
+  document.getElementById('debug').textContent = db ? `DB loaded: ${Object.keys(db).length} links` : 'DB not found - create database.json';
+
+  if(db && db[cleanCode]){
+    document.getElementById('redirectTo').textContent = `Found! Redirecting to ${db[cleanCode]}`;
+    setTimeout(()=>{ window.location.href = db[cleanCode]; }, 800);
+  } else if(db){
+    document.getElementById('redirectTo').innerHTML = `Code <b>${cleanCode}</b> not found in database.json<br><br>Available: ${Object.keys(db).join(', ') || 'empty'}<br><br>Add {"${cleanCode}":"your-url"} to database.json`;
+  } else {
+    document.getElementById('redirectTo').innerHTML = `database.json file nathi malyo.<br>GitHub ma database.json banavo.`;
+  }
+}
+
+handleRedirect();
+</script>
+</body>
+</html>

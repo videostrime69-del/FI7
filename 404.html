@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Redirecting...</title>
+<script>
+// FI7 404.html - saves code and redirects to index.html
+(function(){
+  var path = window.location.pathname; // /FI7/6vn or /FI7/egi
+  var parts = path.split('/').filter(Boolean); // ['FI7','6vn']
+  var code = parts.length > 1 ? parts[1] : null;
+  if(code){
+    // clean query and hash
+    code = code.split('?')[0].split('#')[0];
+    // ignore files
+    if(!code.includes('.') && code.toLowerCase() !== 'fi7'){
+      sessionStorage.setItem('shortcode', code.toLowerCase());
+    }
+  }
+  // go to main page
+  var repo = parts[0] || 'FI7';
+  window.location.replace('/' + repo + '/');
+})();
+</script>
+<style>body{background:#0a0a0a;color:#fff;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}</style>
+</head><body>Redirecting...</body></html>
