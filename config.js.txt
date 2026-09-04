@@ -1,0 +1,12 @@
+// CONFIG for GitHub + Blogger URL Shortener
+// Change these to your own
+const CONFIG = {
+  username: "meetshah", // Your GitHub username
+  repo: "l", // Your repo name (keep 'l' for shortest URL)
+  // For auto-fetch from Blogger (optional - need API Key)
+  // Get BLOG_ID: https://www.googleapis.com/blogger/v3/blogs/byurl?url=https://urlshorterio.blogspot.com/&key=YOUR_API_KEY
+  BLOG_ID: "", // e.g. "1234567890123456789"
+  POST_ID: "", // e.g. "1234567890123456789" - from Blogger dashboard URL postId=
+  API_KEY: "", // Google Cloud Blogger API v3 Key
+  blogPostUrl: "https://urlshorterio.blogspot.com/2026/09/blog-post.html"
+};

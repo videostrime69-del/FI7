@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Redirecting...</title>
+<script>
+// GitHub Pages 404 hack for clean short URLs like /l/abc
+// This file captures /l/abc and redirects to /l/ with code in sessionStorage
+(function(){
+  const path = window.location.pathname;
+  // path like /l/abc or /l/xyz123
+  const parts = path.split('/').filter(Boolean);
+  // parts[0] = repo name 'l', parts[1] = code
+  let code = parts.length > 1 ? parts[1] : null;
+  
+  // Ignore if code is file
+  if(code && !code.includes('.')){
+    sessionStorage.setItem('shortcode', code);
+    // Redirect to repo root
+    // Keep repo base dynamic
+    const repo = parts[0];
+    window.location.replace('/' + repo + '/');
+  } else {
+    // If no code, go to home
+    const repo = parts[0] || 'l';
+    window.location.replace('/' + repo + '/');
+  }
+})();
+</script>
+<style>body{background:#0a0a0a;color:rgba(255,255,255,0.5);font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh}</style>
+</head>
+<body>Redirecting...</body>
+</html>

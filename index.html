@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL Shortener - Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Inter',sans-serif;background:#0a0a0a;color:#fff}
+.mono{font-family:'JetBrains Mono',monospace}
+.glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1)}
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+<header class="border-b border-white/10 p-6">
+<div class="max-w-5xl mx-auto flex justify-between items-center">
+<h1 class="text-xl font-bold">URL Shortener <span class="text-white/40 font-normal">— Admin Panel</span></h1>
+<div class="text-xs mono text-white/40">Blogger DB • GitHub Pages</div>
+</div>
+</header>
+
+<main class="flex-1 max-w-5xl mx-auto w-full p-6 md:p-10">
+<!-- Generator -->
+<div class="glass rounded-[24px] p-8 md:p-10 mb-8">
+<h2 class="text-2xl font-semibold mb-2">Create Ultra Short Link</h2>
+<p class="text-white/50 text-sm mb-8">Paste long URL, get 3-character short link. No ?s= , clean URL.</p>
+
+<div class="space-y-4">
+<div class="flex flex-col md:flex-row gap-3">
+<input id="longUrl" type="url" placeholder="Paste long URL here... e.g. https://youtube.com/watch?v=..." class="flex-1 bg-white/[0.07] border border-white/10 rounded-xl px-5 py-4 text-[15px] outline-none focus:border-white/20 placeholder:text-white/30">
+<button onclick="generate()" class="bg-white text-black font-semibold rounded-xl px-8 py-4 hover:bg-white/90 transition">Generate Short Link</button>
+</div>
+
+<div class="flex items-center gap-3 text-sm">
+<label class="text-white/40">Code Length:</label>
+<select id="codeLen" class="bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 mono outline-none">
+<option value="3" selected>3 chars (46k links) - Shortest</option>
+<option value="4">4 chars (1.4M links)</option>
+<option value="5">5 chars (916M links)</option>
+</select>
+</div>
+</div>
+
+<!-- Result -->
+<div id="result" class="hidden mt-8 border-t border-white/10 pt-8">
+<div class="grid md:grid-cols-2 gap-6">
+<div>
+<label class="text-xs uppercase tracking-widest text-white/30 mb-3 block">Your Short Link</label>
+<div class="flex gap-2">
+<div id="shortLink" class="flex-1 mono bg-white text-black rounded-xl px-4 py-3.5 text-sm font-medium break-all"></div>
+<button onclick="copyLink()" class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl px-5 text-sm font-medium transition">Copy</button>
+</div>
+<div class="mt-3 flex gap-2">
+<a id="openLink" target="_blank" class="text-xs text-white/50 hover:text-white underline">Open Test Link →</a>
+<span id="copyMsg" class="text-xs text-green-400 hidden">Copied!</span>
+</div>
+</div>
+<div>
+<label class="text-xs uppercase tracking-widest text-white/30 mb-3 block">Add This to Blogger Post (Database)</label>
+<div class="relative">
+<pre id="jsonCode" class="mono bg-black border border-white/10 rounded-xl p-4 text-xs text-white/80 overflow-x-auto"></pre>
+<button onclick="copyJson()" class="absolute top-2 right-2 bg-white/10 hover:bg-white/15 rounded-lg px-3 py-1 text-[11px]">Copy JSON</button>
+</div>
+<p class="text-[11px] text-white/30 mt-2">Go to Blogger post → Edit → Paste this inside { } . Example: {"old":"url", <span id="jsonHighlight" class="text-white"></span>}</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Recent -->
+<div class="grid md:grid-cols-3 gap-6">
+<div class="md:col-span-2 glass rounded-2xl p-6">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-semibold">Recent Links</h3>
+<button onclick="clearHistory()" class="text-xs text-white/30 hover:text-white">Clear</button>
+</div>
+<div id="history" class="space-y-2 text-sm"></div>
+</div>
+<div class="glass rounded-2xl p-6">
+<h3 class="font-semibold mb-4">Config</h3>
+<div class="space-y-3 text-sm">
+<div>
+<label class="text-xs text-white/40">GitHub Username</label>
+<input id="cfgUser" class="w-full mt-1 mono bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none" value="meetshah">
+</div>
+<div>
+<label class="text-xs text-white/40">Repo Name</label>
+<input id="cfgRepo" class="w-full mt-1 mono bg-white/5 border border-white/10 rounded-lg px-3 py-2 outline-none" value="l">
+</div>
+<div class="pt-2 text-[11px] text-white/30 mono">
+Current Base: <span id="basePreview" class="text-white/60"></span>
+</div>
+<button onclick="saveConfig()" class="w-full mt-3 bg-white/10 hover:bg-white/15 rounded-lg py-2 text-xs">Save Config</button>
+</div>
+</div>
+</div>
+
+<!-- Redirect Handler (for /?code or /code via sessionStorage) -->
+<div id="redirectMsg" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center p-6">
+<div class="glass rounded-2xl p-8 max-w-md w-full text-center">
+<h3 class="font-semibold mb-2">Redirecting...</h3>
+<p id="redirectUrl" class="mono text-xs text-white/50 break-all"></p>
+</div>
+</div>
+</main>
+
+<script src="config.js"></script>
+<script>
+let cfg = JSON.parse(localStorage.getItem('short_cfg')||'{}');
+document.getElementById('cfgUser').value = cfg.username || (typeof CONFIG !== 'undefined' ? CONFIG.username : 'meetshah');
+document.getElementById('cfgRepo').value = cfg.repo || (typeof CONFIG !== 'undefined' ? CONFIG.repo : 'l');
+function getBase(){
+  const u = document.getElementById('cfgUser').value.trim() || 'meetshah';
+  const r = document.getElementById('cfgRepo').value.trim() || 'l';
+  return `https://${u}.github.io/${r}/`;
+}
+function updateBase(){ document.getElementById('basePreview').textContent = getBase(); }
+updateBase();
+document.getElementById('cfgUser').addEventListener('input', updateBase);
+document.getElementById('cfgRepo').addEventListener('input', updateBase);
+function saveConfig(){
+  const obj={username:document.getElementById('cfgUser').value.trim(), repo:document.getElementById('cfgRepo').value.trim()};
+  localStorage.setItem('short_cfg', JSON.stringify(obj));
+  updateBase();
+  alert('Config Saved!');
+}
+
+function genCode(len){
+  const chars='abcdefghijklmnopqrstuvwxyz0123456789';
+  let c='';
+  for(let i=0;i<len;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  return c;
+}
+
+let lastCode='', lastLong='';
+function generate(){
+  const longUrl=document.getElementById('longUrl').value.trim();
+  if(!longUrl || !longUrl.startsWith('http')){ alert('Please paste valid URL starting with https://'); return; }
+  const len=parseInt(document.getElementById('codeLen').value);
+  const code=genCode(len);
+  const base=getBase();
+  const shortLink=base+code;
+  
+  lastCode=code; lastLong=longUrl;
+  document.getElementById('shortLink').textContent=shortLink;
+  document.getElementById('openLink').href=shortLink;
+  const jsonLine=`"${code}": "${longUrl}"`;
+  document.getElementById('jsonCode').textContent=jsonLine;
+  document.getElementById('jsonHighlight').textContent=jsonLine;
+  document.getElementById('result').classList.remove('hidden');
+  
+  // save history
+  let hist=JSON.parse(localStorage.getItem('short_hist')||'[]');
+  hist.unshift({code, longUrl, shortLink, time: new Date().toLocaleString()});
+  hist=hist.slice(0,20);
+  localStorage.setItem('short_hist', JSON.stringify(hist));
+  renderHistory();
+  // also auto add to blogger json preview if you want full json
+}
+
+function renderHistory(){
+  let hist=JSON.parse(localStorage.getItem('short_hist')||'[]');
+  const el=document.getElementById('history');
+  if(hist.length===0){ el.innerHTML='<div class="text-white/20 text-xs">No links yet. Generate one above.</div>'; return; }
+  el.innerHTML=hist.map(h=>`
+    <div class="flex justify-between items-center bg-white/[0.03] border border-white/5 rounded-xl px-4 py-3">
+      <div class="min-w-0">
+        <div class="mono text-white font-medium">${h.code} <span class="text-white/20">→</span> <span class="text-white/50 text-xs truncate">${h.longUrl.slice(0,40)}</span></div>
+        <div class="text-[11px] text-white/30">${h.time}</div>
+      </div>
+      <button onclick="navigator.clipboard.writeText('${h.shortLink}')" class="ml-3 text-xs bg-white/10 hover:bg-white/15 rounded-lg px-3 py-1.5">Copy</button>
+    </div>
+  `).join('');
+}
+renderHistory();
+
+function copyLink(){
+  const t=document.getElementById('shortLink').textContent;
+  navigator.clipboard.writeText(t);
+  const m=document.getElementById('copyMsg'); m.classList.remove('hidden'); setTimeout(()=>m.classList.add('hidden'),1500);
+}
+function copyJson(){
+  const t=document.getElementById('jsonCode').textContent;
+  navigator.clipboard.writeText(t);
+  alert('JSON Copied! Now paste inside Blogger post { }');
+}
+function clearHistory(){ localStorage.removeItem('short_hist'); renderHistory(); }
+
+// Redirect logic for clean URLs
+(async function handleRedirect(){
+  // Check if coming from 404.html via sessionStorage
+  const codeFrom404 = sessionStorage.getItem('shortcode');
+  const urlParams = new URLSearchParams(window.location.search);
+  const codeFromQuery = urlParams.get('s');
+  const code = codeFrom404 || codeFromQuery;
+  
+  if(code && code !== 'l'){
+    sessionStorage.removeItem('shortcode');
+    // Try to fetch from Blogger post JSON
+    document.getElementById('redirectMsg').classList.remove('hidden');
+    try{
+      // Fetch Blogger post - you need to replace BLOG_ID and POST_ID
+      // For now, try to fetch from localStorage demo DB or show message
+      let db = JSON.parse(localStorage.getItem('demo_db')||'{}');
+      // Also try to parse Blogger post content if you manually add ? Try public fetch
+      // Public fetch needs API key, so we use demo logic + manual DB
+      // If you want auto fetch, add your API_KEY, BLOG_ID, POST_ID in config.js and uncomment below
+      
+      // Demo fallback - if code in recent history
+      let hist=JSON.parse(localStorage.getItem('short_hist')||'[]');
+      let found = hist.find(h=>h.code===code);
+      if(found){
+        document.getElementById('redirectUrl').textContent = 'Found in local history → '+found.longUrl;
+        setTimeout(()=>window.location.href=found.longUrl, 1000);
+        return;
+      }
+      
+      document.getElementById('redirectUrl').textContent = 'This is demo mode. To enable real redirect, add Blogger API fetch in app. Code: '+code;
+      // In production, fetch: https://www.googleapis.com/blogger/v3/blogs/BLOG_ID/posts/POST_ID?key=API_KEY
+      // Then parse content and redirect
+      
+    }catch(e){
+      console.error(e);
+    }
+  }
+})();
+
+// Check for /code in path when served from GitHub Pages root
+</script>
+</body>
+</html>
