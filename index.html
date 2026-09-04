@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Shortener</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .card {
+      background: #1e293b;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 440px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #3b82f6;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #2563eb; }
+    .result {
+      margin-top: 15px;
+      word-break: break-all;
+      background: #0f172a;
+      padding: 10px;
+      border-radius: 6px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="app">
+  <h2 id="status-title">URL Shortener</h2>
+  
+  <div id="creator-ui">
+    <label for="longUrl">Enter Long URL:</label>
+    <input type="url" id="longUrl" placeholder="https://example.com/very-long-link" required />
+    <button onclick="generateSlug()">Create Link Mapping</button>
+
+    <div class="result" id="output">
+      <strong>Your Short Link:</strong><br>
+      <a id="shortLink" target="_blank" style="color: #60a5fa;"></a>
+      <hr style="border-color: #334155; margin: 10px 0;">
+      <p style="font-size: 0.85rem; color: #94a3b8;">
+        Copy this JSON pair into your Blogger post body:
+      </p>
+      <code id="jsonPayload" style="color: #34d399;"></code>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Blogger JSON Feed endpoint for retrieving the post content
+  const BLOG_FEED_URL = "https://urlshorterio.blogspot.com/feeds/posts/default?alt=json";
+
+  async function handleRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get("go");
+
+    if (!key) return; // Normal mode (URL generator)
+
+    // Switch UI to redirecting state
+    document.getElementById("creator-ui").style.display = "none";
+    document.getElementById("status-title").innerText = "Redirecting...";
+
+    try {
+      const res = await fetch(BLOG_FEED_URL);
+      const data = await res.json();
+      
+      // Look for the targeted post
+      const post = data.feed.entry.find(p => 
+        p.link.some(l => l.rel === "alternate" && l.href.includes("2026/09/blog-post.html"))
+      );
+
+      if (!post) throw new Error("Database post not found.");
+
+      const content = post.content.$t;
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, "text/html");
+      const linkDataBlock = doc.getElementById("link-data");
+
+      if (!linkDataBlock) throw new Error("No link dictionary found in post.");
+
+      const mapping = JSON.parse(linkDataBlock.textContent.trim());
+      const destination = mapping[key];
+
+      if (destination) {
+        window.location.replace(destination);
+      } else {
+        document.getElementById("status-title").innerText = "Link Not Found (404)";
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById("status-title").innerText = "Failed to load redirect destination.";
+    }
+  }
+
+  function generateSlug() {
+    const longUrl = document.getElementById("longUrl").value.trim();
+    if (!longUrl) return alert("Please enter a valid URL");
+
+    // Generate random 5-character string
+    const slug = Math.random().toString(36).substring(2, 7);
+    const shortUrl = `${window.location.origin}${window.location.pathname}?go=${slug}`;
+
+    document.getElementById("output").style.display = "block";
+    document.getElementById("shortLink").href = shortUrl;
+    document.getElementById("shortLink").innerText = shortUrl;
+    document.getElementById("jsonPayload").innerText = `"${slug}": "${longUrl}"`;
+  }
+
+  // Check URL on load
+  handleRedirect();
+</script>
+
+</body>
+</html>
