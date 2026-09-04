@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - URL Shortener</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>body{font-family:Inter,sans-serif;background:#0a0a0a;color:#fff}.mono{font-family:'JetBrains Mono',monospace}.glass{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(20px)}</style>
+</head>
+<body class="min-h-screen">
+<header class="p-6 border-b border-white/10"><div class="max-w-5xl mx-auto flex justify-between"><h1 class="font-bold">SHORTENER <span class="text-white/40 font-normal">Admin - FI7</span></h1><span class="mono text-xs text-white/40">videostrime69-del.github.io/FI7/</span></div></header>
+
+<main class="max-w-5xl mx-auto p-6 md:p-10">
+<div class="glass rounded-[24px] p-8 mb-8">
+<h2 class="text-2xl font-bold mb-2">Create New Short Link</h2>
+<p class="text-white/50 text-sm mb-6">Paste long URL, get code like 6vn. Final link will be videostrime69-del.github.io/FI7/6vn</p>
+<div class="flex flex-col md:flex-row gap-3">
+<input id="longUrl" type="url" placeholder="https://..." class="flex-1 bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none">
+<button onclick="generate()" class="bg-white text-black font-bold rounded-xl px-8 py-4">Generate</button>
+</div>
+<div id="result" class="hidden mt-8 pt-8 border-t border-white/10">
+<p class="text-xs uppercase tracking-widest text-white/30 mb-2">Your Short Link is Ready</p>
+<div class="flex gap-2"><div id="shortLink" class="flex-1 mono bg-white text-black rounded-xl px-4 py-3 font-bold"></div><button onclick="copyLink()" class="bg-white/10 border border-white/10 rounded-xl px-6">Copy</button></div>
+<p class="text-xs text-white/30 mt-4">STEP 2: Copy below JSON and add to Blogger post</p>
+<pre id="jsonCode" class="mono mt-2 bg-black border border-white/10 rounded-xl p-4 text-sm"></pre>
+<button onclick="copyJson()" class="mt-2 text-xs bg-white/10 rounded-lg px-4 py-2">Copy JSON for Blogger</button>
+</div>
+</div>
+<div id="redirectBox" class="hidden glass rounded-2xl p-8 text-center"><h3 class="text-xl font-bold animate-pulse">Redirecting...</h3><p id="redirectTo" class="mono text-xs text-white/40 mt-2 break-all"></p></div>
+</main>
+
+<script src="data:application/javascript;base64,Ly8gQ09ORklHIGZvciBHaXRIdWIgKyBCbG9nZ2VyIFVSTCBTaG9ydGVuZXIKLy8gQ2hhbmdlIHRoZXNlIHRvIHlvdXIgb3duCmNvbnN0IENPTkZJRyA9IHsKICB1c2VybmFtZTogIm1lZXRzaGFoIiwgLy8gWW91ciBHaXRIdWIgdXNlcm5hbWUKICByZXBvOiAibCIsIC8vIFlvdXIgcmVwbyBuYW1lIChrZWVwICdsJyBmb3Igc2hvcnRlc3QgVVJMKQogIC8vIEZvciBhdXRvLWZldGNoIGZyb20gQmxvZ2dlciAob3B0aW9uYWwgLSBuZWVkIEFQSSBLZXkpCiAgLy8gR2V0IEJMT0dfSUQ6IGh0dHBzOi8vd3d3Lmdvb2dsZWFwaXMuY29tL2Jsb2dnZXIvdjMvYmxvZ3MvYnl1cmw/dXJsPWh0dHBzOi8vdXJsc2hvcnRlcmlvLmJsb2dzcG90LmNvbS8ma2V5PVlPVVJfQVBJX0tFWQogIEJMT0dfSUQ6ICIiLCAvLyBlLmcuICIxMjM0NTY3ODkwMTIzNDU2Nzg5IgogIFBPU1RfSUQ6ICIiLCAvLyBlLmcuICIxMjM0NTY3ODkwMTIzNDU2Nzg5IiAtIGZyb20gQmxvZ2dlciBkYXNoYm9hcmQgVVJMIHBvc3RJZD0KICBBUElfS0VZOiAiIiwgLy8gR29vZ2xlIENsb3VkIEJsb2dnZXIgQVBJIHYzIEtleQogIGJsb2dQb3N0VXJsOiAiaHR0cHM6Ly91cmxzaG9ydGVyaW8uYmxvZ3Nwb3QuY29tLzIwMjYvMDkvYmxvZy1wb3N0Lmh0bWwiCn07Cg=="></script>
+<script>
+const BLOGGER_POST_URL = CONFIG.blogPostUrl; // e.g. https://urlshorterio.blogspot.com/2026/09/blog-post.html
+
+function genCode(len=3){ const c='abcdefghijklmnopqrstuvwxyz0123456789'; let s=''; for(let i=0;i<len;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
+
+function generate(){
+  const longUrl = document.getElementById('longUrl').value.trim();
+  if(!longUrl.startsWith('http')){ alert('Valid https:// URL nakho'); return; }
+  const code = genCode(3);
+  const base = `https://${CONFIG.username}.github.io/${CONFIG.repo}/`;
+  const shortLink = base + code;
+  document.getElementById('shortLink').textContent = shortLink;
+  document.getElementById('jsonCode').textContent = `"${code}": "${longUrl}"`;
+  document.getElementById('result').classList.remove('hidden');
+  window.lastCode = code; window.lastLong = longUrl;
+}
+function copyLink(){ navigator.clipboard.writeText(document.getElementById('shortLink').textContent); alert('Short link copied!'); }
+function copyJson(){ navigator.clipboard.writeText(document.getElementById('jsonCode').textContent); alert('Copied! Have Blogger ma jaine { } ni andar paste karo'); }
+
+// ---- REDIRECT LOGIC ----
+async function getDatabase(){
+  // Try to fetch Blogger post via allorigins to avoid CORS
+  try{
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(BLOGGER_POST_URL)}`;
+    const res = await fetch(proxy);
+    const data = await res.json();
+    const html = data.contents;
+    // Extract JSON from inside post: look for { "code": "url" ... }
+    const match = html.match(/\{[^]*?"[^"]+"\s*:\s*"https?:[^}]+?\}/);
+    if(match){
+      // clean html entities
+      let jsonStr = match[0].replace(/&quot;/g,'"').replace(/&amp;/g,'&');
+      // Try parse
+      const obj = JSON.parse(jsonStr);
+      return obj;
+    }
+  }catch(e){ console.log('fetch fail', e); }
+  return null;
+}
+
+async function handleRedirect(){
+  const codeFrom404 = sessionStorage.getItem('shortcode');
+  sessionStorage.removeItem('shortcode');
+  if(!codeFrom404) return;
+  if(codeFrom404 === 'FI7' || codeFrom404 === 'index.html') return;
+  
+  const box = document.getElementById('redirectBox');
+  box.classList.remove('hidden');
+  document.getElementById('redirectTo').textContent = `Searching for code: ${codeFrom404} in Blogger...`;
+  
+  const db = await getDatabase();
+  if(db && db[codeFrom404]){
+    document.getElementById('redirectTo').textContent = `Found! Redirecting to ${db[codeFrom404]}`;
+    setTimeout(()=>{ window.location.href = db[codeFrom404]; }, 800);
+  } else {
+    document.getElementById('redirectTo').textContent = `Code ${codeFrom404} not found in Blogger DB. Check if Blogger post is Published and contains {"${codeFrom404}": "url"}`;
+    // Show debug
+    console.log('DB:', db);
+  }
+}
+handleRedirect();
+</script>
+</body>
+</html>

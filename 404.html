@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Redirecting...</title>
+<script>
+// This is 404.html - REQUIRED for https://videostrime69-del.github.io/FI7/6vn to work
+(function(){
+  var path = window.location.pathname; // e.g. /FI7/6vn
+  var parts = path.split('/').filter(Boolean);
+  // parts[0] = FI7, parts[1] = 6vn
+  var code = parts.length > 1 ? parts[1] : null;
+  if(code && code !== 'FI7' && !code.includes('.')){
+    sessionStorage.setItem('shortcode', code);
+    window.location.replace('/' + parts[0] + '/');
+  } else {
+    window.location.replace('/' + (parts[0] || 'FI7') + '/');
+  }
+})();
+</script>
+<style>body{background:#0a0a0a;color:#fff;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh}</style>
+</head><body>Redirecting to short link...</body></html>
