@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<script>
+(function(){
+  var path = window.location.pathname;
+  var parts = path.split('/').filter(Boolean);
+  var code = parts.length > 1 ? parts[1] : null;
+  if(code && !code.includes('.')){
+    sessionStorage.setItem('shortcode', code);
+    window.location.replace('/' + parts[0] + '/');
+  } else {
+    window.location.replace('/' + (parts[0]||'FI7') + '/');
+  }
+})();
+</script>
+</head><body style="background:#000;color:#fff;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh">Loading short link...</body></html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FI7 - URL Shortener Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{background:#0a0a0a;color:#fff;font-family:Inter,system-ui}
+.mono{font-family:monospace}
+.glass{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1)}
+</style>
+</head>
+<body class="min-h-screen p-6">
+<div class="max-w-2xl mx-auto">
+<div class="text-center mb-8">
+<h1 class="text-3xl font-black">FI7 SHORTENER</h1>
+<p class="text-white/40 text-sm mt-2 mono">videostrime69-del.github.io/FI7/</p>
+</div>
+
+<div class="glass rounded-[24px] p-8">
+<h2 class="text-xl font-bold mb-6">Create Short Link</h2>
+<input id="longUrl" type="url" placeholder="Paste long URL https://..." class="w-full bg-white/10 border border-white/10 rounded-xl px-5 py-4 outline-none mb-4">
+<button onclick="generate()" class="w-full bg-white text-black font-bold rounded-xl py-4">GENERATE SHORT LINK</button>
+
+<div id="result" class="hidden mt-8 pt-8 border-t border-white/10">
+<p class="text-xs text-white/30 mb-2">✅ YOUR SHORT LINK</p>
+<div id="shortLink" class="mono bg-white text-black rounded-xl p-4 font-bold break-all text-center"></div>
+<button onclick="navigator.clipboard.writeText(document.getElementById('shortLink').textContent);alert('Copied!')" class="mt-3 w-full bg-white/10 rounded-xl py-3 text-sm">Copy Link</button>
+
+<p class="text-xs text-white/30 mt-6 mb-2">STEP 2 - PASTE THIS IN BLOGGER POST</p>
+<pre id="jsonCode" class="mono bg-black border border-white/10 rounded-xl p-4 text-sm overflow-auto"></pre>
+<button onclick="navigator.clipboard.writeText(document.getElementById('jsonCode').textContent);alert('JSON Copied! Blogger ma paste karo')" class="mt-3 w-full bg-white/10 rounded-xl py-3 text-sm">Copy JSON</button>
+
+<div class="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-xs text-yellow-200">
+⚠️ Blogger ma jaine Post ma <b>{"old":"url", "newcode":"newurl"}</b> aavi rite add karvu. Comma bhulvu nai.
+</div>
+</div>
+</div>
+
+<div id="redirectBox" class="hidden glass rounded-2xl p-8 text-center mt-6">
+<h3 class="font-bold text-lg">Redirecting...</h3>
+<p id="redirectTo" class="mono text-xs text-white/40 mt-2"></p>
+</div>
+
+</div>
+
+<script>
+// FIXED CONFIG - no more config.js needed
+const USERNAME = "videostrime69-del";
+const REPO = "FI7";
+const BLOG_URL = "https://urlshorterio.blogspot.com/2026/09/blog-post.html";
+const BASE_URL = `https://${USERNAME}.github.io/${REPO}/`;
+
+function genCode(){ const c='abcdefghijklmnopqrstuvwxyz0123456789'; let s=''; for(let i=0;i<3;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; }
+
+function generate(){
+  const longUrl = document.getElementById('longUrl').value.trim();
+  if(!longUrl.startsWith('http')){ alert('https:// wala URL nakho'); return; }
+  const code = genCode();
+  const shortLink = BASE_URL + code;
+  document.getElementById('shortLink').textContent = shortLink;
+  document.getElementById('jsonCode').textContent = `"${code}": "${longUrl}"`;
+  document.getElementById('result').classList.remove('hidden');
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+async function getDB(){
+  try{
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(BLOG_URL)}`;
+    const res = await fetch(proxy);
+    const data = await res.json();
+    const html = data.contents;
+    const match = html.match(/\{[^]*?"[^"]+"\s*:\s*"https?:[^}]+?\}/);
+    if(match){
+      let str = match[0].replace(/&quot;/g,'"');
+      return JSON.parse(str);
+    }
+  }catch(e){ console.error(e); }
+  return null;
+}
+
+async function handleRedirect(){
+  const code = sessionStorage.getItem('shortcode');
+  sessionStorage.removeItem('shortcode');
+  if(!code) return;
+  if(code.toLowerCase() === REPO.toLowerCase()) return;
+  const box = document.getElementById('redirectBox');
+  box.classList.remove('hidden');
+  document.getElementById('redirectTo').textContent = `Finding ${code} in Blogger DB...`;
+  const db = await getDB();
+  console.log('DB', db);
+  if(db && db[code]){
+    document.getElementById('redirectTo').textContent = `Found! Going to ${db[code]}`;
+    setTimeout(()=>{ window.location.href = db[code]; }, 1000);
+  } else {
+    document.getElementById('redirectTo').innerHTML = `Code <b>${code}</b> not found.<br>Make sure Blogger post is PUBLISHED and contains {"${code}":"url"}<br><br>DB found: ${db ? JSON.stringify(db).slice(0,100) : 'null'}`;
+  }
+}
+handleRedirect();
+</script>
+</body>
+</html>
